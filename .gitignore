@@ -3,3 +3,5 @@ lambda/node_modules/
 lambda/*.zip
 .DS_Store
 *.log
+passphrase
+function.zip
