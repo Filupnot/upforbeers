@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>upforbeers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter+Tight:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0E1A1B;
+  --slate:#15252A;
+  --line:#23383C;
+  --amber:#F2A93B;
+  --foam:#FFEBC2;
+  --muted:#6F8A88;
+  --glow:0;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+body{
+  background:#080F10;
+  font-family:'Inter Tight',system-ui,sans-serif;
+  color:var(--foam);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:22px;
+  padding:24px 16px 40px;
+}
+
+/* ---------- phone frame ---------- */
+.phone{
+  position:relative;
+  width:100%;
+  max-width:392px;
+  height:min(780px,86vh);
+  min-height:600px;
+  border-radius:42px;
+  border:1px solid var(--line);
+  background:var(--ink);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 40px 90px rgba(0,0,0,.6);
+}
+
+/* the room: ambient light that spills from the pint */
+.room{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:radial-gradient(58% 42% at 50% 40%, rgba(242,169,59,.20), transparent 70%);
+  opacity:var(--glow);
+  transition:opacity 1.1s ease;
+  z-index:0;
+}
+
+.screen{position:relative;z-index:1;display:flex;flex-direction:column;flex:1;min-height:0}
+
+/* ---------- header ---------- */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:26px 24px 0;
+}
+.wordmark{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-weight:800;font-size:19px;letter-spacing:-.035em;
+  color:var(--foam);
+}
+.wordmark b{color:var(--amber);font-weight:800}
+.whoami{
+  font-size:12.5px;font-weight:500;color:var(--muted);
+  background:transparent;border:1px solid var(--line);
+  border-radius:999px;padding:6px 12px;cursor:pointer;
+  font-family:inherit;transition:border-color .2s,color .2s;
+}
+.whoami:hover{border-color:var(--amber);color:var(--foam)}
+
+/* ---------- stage ---------- */
+.stage{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:22px;
+  padding:12px 24px;min-height:0;
+}
+
+.pintwrap{position:relative;width:216px;height:216px;flex:none}
+
+/* cooldown ring sits outside the glass */
+.ring{
+  position:absolute;inset:-11px;border-radius:50%;
+  background:conic-gradient(var(--amber) calc(var(--ring)*1%), rgba(35,56,60,.85) 0);
+  opacity:0;transition:opacity .35s ease;
+}
+.ring::after{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--ink)}
+.is-cooldown .ring{opacity:1}
+
+.pint{
+  position:absolute;inset:0;
+  border-radius:50%;
+  border:1.5px solid var(--line);
+  background:rgba(255,255,255,.02);
+  overflow:hidden;cursor:pointer;
+  font-family:inherit;color:inherit;
+  transition:border-color .4s ease, box-shadow .6s ease, transform .18s cubic-bezier(.34,1.4,.64,1);
+}
+.pint:focus-visible{outline:2px solid var(--foam);outline-offset:6px}
+.pint:active{transform:scale(.965)}
+.is-mine .pint{border-color:rgba(242,169,59,.5);box-shadow:0 0 70px rgba(242,169,59,.28)}
+.is-cooldown .pint{cursor:not-allowed;border-color:transparent}
+
+/* the beer */
+.fill{
+  position:absolute;left:0;right:0;bottom:0;
+  height:0;
+  background:linear-gradient(180deg,#F9C05B,#DE8C1E);
+  transition:height 1.5s cubic-bezier(.3,.9,.3,1);
+}
+.fill::before,.fill::after{
+  content:'';position:absolute;left:-30%;right:-30%;top:-13px;height:26px;
+  background:var(--foam);border-radius:50%;
+}
+.fill::before{animation:slosh 5.5s ease-in-out infinite}
+.fill::after{opacity:.55;animation:slosh 4.1s ease-in-out infinite reverse}
+@keyframes slosh{
+  0%,100%{transform:translateX(-9px) rotate(-1.2deg)}
+  50%{transform:translateX(9px) rotate(1.2deg)}
+}
+
+.bubble{
+  position:absolute;bottom:0;width:5px;height:5px;border-radius:50%;
+  background:rgba(255,235,194,.6);opacity:0;
+}
+.is-mine .bubble{animation:rise 4.2s ease-in infinite}
+.bubble:nth-child(2){left:32%;animation-delay:.3s}
+.bubble:nth-child(3){left:52%;width:7px;height:7px;animation-delay:1.6s}
+.bubble:nth-child(4){left:68%;animation-delay:2.7s}
+@keyframes rise{
+  0%{transform:translateY(0) scale(.6);opacity:0}
+  18%{opacity:.75}
+  100%{transform:translateY(-150px) scale(1);opacity:0}
+}
+
+/* the label sitting on the glass */
+.face{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:7px;
+  padding:0 30px;text-align:center;
+}
+.glyph{font-size:26px;line-height:1;transition:transform .5s ease}
+.is-mine .glyph{transform:translateY(-2px) scale(1.08)}
+.label{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-weight:700;font-size:19px;line-height:1.15;letter-spacing:-.03em;
+}
+.timer{
+  font-family:'Space Mono',monospace;font-weight:700;
+  font-size:15px;letter-spacing:.06em;
+}
+.is-mine .label,.is-mine .timer{color:#3B2405}
+.is-cooldown .label{color:var(--muted)}
+.is-cooldown .timer{color:var(--muted)}
+
+/* ---------- status + undo ---------- */
+.status{
+  font-size:14.5px;line-height:1.5;color:var(--muted);
+  text-align:center;max-width:270px;min-height:44px;
+}
+.status b{color:var(--foam);font-weight:600}
+.undo{
+  background:none;border:none;font-family:inherit;font-size:13.5px;
+  color:var(--muted);text-decoration:underline;text-underline-offset:3px;
+  cursor:pointer;padding:4px;display:none;
+}
+.is-mine .undo{display:block}
+.undo:hover{color:var(--foam)}
+
+/* ---------- roster ---------- */
+.roster{
+  border-top:1px solid var(--line);
+  padding:18px 24px 30px;flex:none;
+}
+.roster-head{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:10.5px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+}
+.roster-head span{font-family:'Space Mono',monospace;letter-spacing:.06em}
+.row{
+  display:flex;align-items:center;gap:11px;
+  padding:9px 0;border-bottom:1px solid rgba(35,56,60,.5);
+}
+.row:last-child{border-bottom:none}
+.pip{width:7px;height:7px;border-radius:50%;background:var(--amber);flex:none}
+.who{font-size:15px;font-weight:500;flex:1}
+.left{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted)}
+.empty{font-size:14px;color:var(--muted);padding:9px 0}
+
+/* ---------- first run ---------- */
+.onboard{
+  position:absolute;inset:0;z-index:3;background:var(--ink);
+  display:none;flex-direction:column;justify-content:center;
+  padding:0 34px;gap:16px;
+}
+.is-onboard .onboard{display:flex}
+.onboard h1{
+  font-family:'Bricolage Grotesque',sans-serif;
+  font-weight:800;font-size:31px;letter-spacing:-.04em;line-height:1.1;
+}
+.onboard p{font-size:14.5px;color:var(--muted);line-height:1.5;margin-bottom:6px}
+.field{
+  background:transparent;border:none;border-bottom:1.5px solid var(--line);
+  padding:12px 2px;font-family:inherit;font-size:19px;color:var(--foam);
+  width:100%;transition:border-color .2s;
+}
+.field:focus{outline:none;border-color:var(--amber)}
+.field::placeholder{color:#3C5457}
+.go{
+  margin-top:10px;background:var(--amber);border:none;border-radius:999px;
+  padding:15px;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;
+  font-size:16px;color:#2C1B03;cursor:pointer;letter-spacing:-.02em;
+}
+.go:hover{background:#FFBC4E}
+
+/* ---------- preview switcher ---------- */
+.preview{
+  display:flex;flex-wrap:wrap;gap:7px;justify-content:center;
+  max-width:440px;
+}
+.preview-label{
+  width:100%;text-align:center;font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:#3C5457;margin-bottom:3px;
+}
+.preview button{
+  background:transparent;border:1px solid var(--line);color:var(--muted);
+  border-radius:999px;padding:7px 13px;font-family:inherit;font-size:12.5px;
+  cursor:pointer;transition:.18s;
+}
+.preview button:hover{border-color:var(--muted);color:var(--foam)}
+.preview button[data-on]{background:var(--foam);border-color:var(--foam);color:var(--ink);font-weight:600}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<div class="phone" id="phone">
+  <div class="room"></div>
+
+  <div class="screen">
+    <div class="topbar">
+      <div class="wordmark">upfor<b>beers</b></div>
+      <button class="whoami">Philip</button>
+    </div>
+
+    <div class="stage">
+      <div class="pintwrap">
+        <div class="ring"></div>
+        <button class="pint" id="pint">
+          <div class="fill" id="fill">
+            <i class="bubble"></i><i class="bubble"></i><i class="bubble"></i>
+          </div>
+          <div class="face">
+            <div class="glyph" id="glyph">🍺</div>
+            <div class="label" id="label">I'm up for beers</div>
+            <div class="timer" id="timer"></div>
+          </div>
+        </button>
+      </div>
+      <p class="status" id="status"></p>
+      <button class="undo" id="undo">Never mind</button>
+    </div>
+
+    <div class="roster">
+      <div class="roster-head">Who's in <span id="count"></span></div>
+      <div id="rows"></div>
+    </div>
+  </div>
+
+  <div class="onboard">
+    <h1>What should we call you?</h1>
+    <p>Your friends see this name when you call a round.</p>
+    <input class="field" placeholder="Philip" id="nameField">
+    <button class="go" id="goBtn">Start</button>
+  </div>
+</div>
+
+<div class="preview">
+  <div class="preview-label">Preview states</div>
+  <button data-state="onboard">First run</button>
+  <button data-state="idle">Nobody's up</button>
+  <button data-state="theirs">Harry's up</button>
+  <button data-state="mine">You're up</button>
+  <button data-state="cooldown">Cooling off</button>
+</div>
+
+<script>
+const phone = document.getElementById('phone');
+const fill = document.getElementById('fill');
+const label = document.getElementById('label');
+const timer = document.getElementById('timer');
+const glyph = document.getElementById('glyph');
+const status = document.getElementById('status');
+const rows = document.getElementById('rows');
+const count = document.getElementById('count');
+
+const WINDOW = 3 * 3600;   // a signal lives 3 hours
+const COOL   = 3600;       // one round per hour
+
+let state = 'idle';
+let remaining = 0;
+let coolLeft = 0;
+
+const fmt = s => {
+  const h = Math.floor(s/3600), m = Math.floor(s%3600/60);
+  return h ? h + 'h ' + String(m).padStart(2,'0') + 'm' : m + 'm';
+};
+const clock = s => String(Math.floor(s/60)).padStart(2,'0') + ':' + String(Math.floor(s%60)).padStart(2,'0');
+
+function roster(list){
+  count.textContent = list.length ? list.length : '';
+  rows.innerHTML = list.length
+    ? list.map(p => `<div class="row"><span class="pip"></span><span class="who">${p.n}</span><span class="left">${p.t}</span></div>`).join('')
+    : '<div class="empty">Nobody yet. Be the one.</div>';
+}
+
+function set(next){
+  state = next;
+  phone.className = 'phone is-' + next;
+
+  if(next === 'mine'){ remaining = 2*3600 + 31*60; }
+  if(next === 'cooldown'){ coolLeft = 23*60 + 41; }
+
+  document.querySelectorAll('.preview button').forEach(b => {
+    b.dataset.state === next ? b.setAttribute('data-on','') : b.removeAttribute('data-on');
+  });
+
+  render();
+}
+
+function render(){
+  const room = document.querySelector('.room');
+  const ring = document.querySelector('.ring');
+
+  if(state === 'idle' || state === 'onboard'){
+    fill.style.height = '0%';
+    phone.style.setProperty('--glow', 0);
+    glyph.textContent = '🍺';
+    label.textContent = "I'm up for beers";
+    timer.textContent = '';
+    status.innerHTML = 'Quiet night. Tap to let the group know.';
+    roster([]);
+  }
+
+  if(state === 'theirs'){
+    fill.style.height = '0%';
+    phone.style.setProperty('--glow', .85);
+    glyph.textContent = '👋';
+    label.textContent = "I'm in";
+    timer.textContent = '';
+    status.innerHTML = '<b>Harry</b> is up for beers. Tap to join and he\'ll know.';
+    roster([{n:'Harry', t:'1h 12m left'}]);
+  }
+
+  if(state === 'mine'){
+    fill.style.height = Math.max(0, remaining/WINDOW*100) + '%';
+    phone.style.setProperty('--glow', 1);
+    glyph.textContent = '🍺';
+    label.textContent = 'You\'re up';
+    timer.textContent = fmt(remaining) + ' left';
+    status.innerHTML = '<b>4 friends</b> just got a notification.';
+    roster([
+      {n:'Philip (you)', t: fmt(remaining) + ' left'},
+      {n:'Harry',        t:'1h 12m left'}
+    ]);
+  }
+
+  if(state === 'cooldown'){
+    fill.style.height = '0%';
+    phone.style.setProperty('--glow', .25);
+    ring.style.setProperty('--ring', (1 - coolLeft/COOL) * 100);
+    glyph.textContent = '⏳';
+    label.textContent = 'Cooling off';
+    timer.textContent = clock(coolLeft);
+    status.innerHTML = 'You called a round 36 minutes ago. One per hour keeps everyone\'s phone friendly.';
+    roster([{n:'Philip (you)', t:'2h 04m left'}]);
+  }
+}
+
+document.getElementById('pint').onclick = () => {
+  if(state === 'idle' || state === 'theirs') set('mine');
+};
+document.getElementById('undo').onclick = () => set('idle');
+document.getElementById('goBtn').onclick = () => set('idle');
+document.querySelectorAll('.preview button').forEach(b => {
+  b.onclick = () => set(b.dataset.state);
+});
+
+setInterval(() => {
+  if(state === 'mine' && remaining > 0){ remaining -= 12; render(); }
+  if(state === 'cooldown' && coolLeft > 0){ coolLeft -= 1; render(); }
+}, 1000);
+
+set('idle');
+</script>
+</body>
+</html>

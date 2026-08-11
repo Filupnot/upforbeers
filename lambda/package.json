@@ -1,0 +1,11 @@
+{
+  "name": "upforbeers-lambda",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "upforbeers push notification backend",
+  "main": "index.mjs",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

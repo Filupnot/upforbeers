@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E1A1B">
+<title>upforbeers</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="upforbeers">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter+Tight:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- iOS install gate, shown when not launched from the Home Screen -->
+<div class="install">
+  <div class="wordmark">upfor<b>beers</b></div>
+  <h1>Add to your Home Screen</h1>
+  <p>Beer signals only reach you as notifications once upforbeers lives on your Home Screen. Two taps.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <div class="txt">Tap the <b class="shareglyph">Share</b> button in Safari's toolbar.</div>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <div class="txt">Choose <b>Add to Home Screen</b>, then open upforbeers from the new icon.</div>
+    </div>
+  </div>
+</div>
+
+<div class="phone" id="phone">
+  <div class="room"></div>
+
+  <div class="screen">
+    <div class="topbar">
+      <div class="wordmark">upfor<b>beers</b></div>
+      <button class="whoami" id="whoami">You</button>
+    </div>
+
+    <div class="stage">
+      <div class="pintwrap">
+        <div class="ring"></div>
+        <button class="pint" id="pint">
+          <div class="fill" id="fill">
+            <i class="bubble"></i><i class="bubble"></i><i class="bubble"></i>
+          </div>
+          <div class="face">
+            <div class="glyph" id="glyph">🍺</div>
+            <div class="label" id="label">I'm up for beers</div>
+            <div class="timer" id="timer"></div>
+          </div>
+        </button>
+      </div>
+      <p class="status" id="status"></p>
+      <button class="undo" id="undo">Never mind</button>
+    </div>
+
+    <div class="roster">
+      <div class="roster-head">Who's in <span id="count"></span></div>
+      <div id="rows"></div>
+    </div>
+  </div>
+
+  <!-- first run: pick a name -->
+  <div class="onboard">
+    <h1>What should we call you?</h1>
+    <p>Your friends see this name when you call a round.</p>
+    <input class="field" placeholder="Philip" id="nameField" autocomplete="off" autocapitalize="words" enterkeyhint="go">
+    <button class="go" id="goBtn">Start</button>
+  </div>
+
+  <!-- passphrase gate -->
+  <div class="gate" id="gate">
+    <h1>Group passphrase</h1>
+    <p>One shared word keeps strangers from buzzing everyone. Ask whoever set this up.</p>
+    <input class="field" placeholder="passphrase" id="keyField" type="password" autocomplete="off" enterkeyhint="go">
+    <button class="go" id="keyBtn">Unlock</button>
+    <p class="hint" id="keyHint">Kept only on this device.</p>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
