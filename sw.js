@@ -1,4 +1,4 @@
-// upforbeers service worker. No caching, just push.
+// UpForBeers service worker. No caching, just push.
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
@@ -6,7 +6,7 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', (event) => {
   // iOS revokes push permission from a web app that receives a push and shows
   // nothing, so we ALWAYS show a notification, even if the payload is missing.
-  let data = { title: 'upforbeers', body: 'Someone is up for beers', url: '/' };
+  let data = { title: 'UpForBeers', body: 'Someone is up for beers', url: '/' };
   if (event.data) {
     try {
       data = Object.assign(data, event.data.json());

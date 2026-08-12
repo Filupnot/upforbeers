@@ -29,6 +29,7 @@ const count = document.getElementById('count');
 const whoami = document.getElementById('whoami');
 const undo = document.getElementById('undo');
 const pint = document.getElementById('pint');
+const msgField = document.getElementById('msgField');
 
 // ---------- local model, synced from the server ----------
 let model = { roster: [] };
@@ -59,7 +60,8 @@ function renderRoster() {
     ? list
         .map((p) => {
           const who = p.mine ? esc(p.name) + ' (you)' : esc(p.name);
-          return `<div class="row"><span class="pip"></span><span class="who">${who}</span><span class="left">${fmt(p.secondsLeft)} left</span></div>`;
+          const note = p.message ? `<span class="rowmsg">${esc(p.message)}</span>` : '';
+          return `<div class="row"><span class="pip"></span><span class="who">${who}${note}</span><span class="left">${fmt(p.secondsLeft)} left</span></div>`;
         })
         .join('')
     : '<div class="empty">Nobody yet. Be the one.</div>';
@@ -88,7 +90,8 @@ function render() {
     const caller = others.find((p) => !p.joined) || others[0];
     const extra = others.length > 1 ? ` and <b>${others.length - 1}</b> other${others.length > 2 ? 's' : ''}` : '';
     const verb = others.length > 1 ? 'are' : 'is';
-    status.innerHTML = `<b>${esc(caller.name)}</b>${extra} ${verb} up for beers. Tap to join and they'll know.`;
+    const note = caller.message ? ` &ldquo;${esc(caller.message)}&rdquo;` : '';
+    status.innerHTML = `<b>${esc(caller.name)}</b>${extra} ${verb} up for beers${note}. Tap to join and they'll know.`;
   } else if (st === 'mine') {
     fill.style.height = Math.max(0, (mine.secondsLeft / WINDOW) * 100) + '%';
     phone.style.setProperty('--glow', 1);
@@ -205,7 +208,7 @@ async function ensureSubscribed() {
 }
 
 // ---------- actions ----------
-async function post(path, needsKey) {
+async function post(path, needsKey, extra) {
   let reprompt = false;
   for (let attempt = 0; attempt < 2; attempt++) {
     const headers = { 'content-type': 'application/json' };
@@ -213,7 +216,7 @@ async function post(path, needsKey) {
     const r = await fetch(`${FUNCTION_URL}${path}`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ userId: USER_ID, name: NAME }),
+      body: JSON.stringify({ userId: USER_ID, name: NAME, ...extra }),
     });
     if (r.status === 401 && needsKey) {
       localStorage.removeItem('ub_key');
@@ -225,11 +228,17 @@ async function post(path, needsKey) {
   return null;
 }
 
+// The note is only read at send time, so it never needs to live in the model.
+function takeMessage() {
+  return msgField.value.trim();
+}
+
 async function broadcast() {
   if (!(await ensureSubscribed())) return;
-  const r = await post('/broadcast', true);
+  const r = await post('/broadcast', true, { message: takeMessage() });
   if (!r) return;
   if (r.ok) {
+    msgField.value = '';
     const data = await r.json().catch(() => ({}));
     justNotified = data.notified ?? null;
   }
@@ -238,8 +247,9 @@ async function broadcast() {
 
 async function join() {
   if (!(await ensureSubscribed())) return;
-  const r = await post('/join', true);
+  const r = await post('/join', true, { message: takeMessage() });
   if (r && r.ok) {
+    msgField.value = '';
     const data = await r.json().catch(() => ({}));
     justNotified = data.notified ?? null;
   }
@@ -271,6 +281,13 @@ pint.onclick = async () => {
   }
 };
 undo.onclick = () => leave();
+msgField.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    msgField.blur(); // drop the mobile keyboard so the confirmation is visible
+    pint.click();
+  }
+});
 
 // ---------- onboarding ----------
 const nameField = document.getElementById('nameField');

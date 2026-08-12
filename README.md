@@ -1,4 +1,4 @@
-# upforbeers
+# UpForBeers
 
 Tap a pint, every friend's phone buzzes with "Name is up for beers." They tap back to say they're in. That is the whole app.
 
@@ -32,16 +32,18 @@ One Lambda, dispatched on method and path.
 | Route | Auth | Body | Does |
 |---|---|---|---|
 | `POST /subscribe` | none | `{ userId, name, subscription }` | upserts the push subscription, idempotent |
-| `POST /broadcast` | `x-beer-key` | `{ userId, name }` | writes a signal, pushes to everyone else |
-| `POST /join` | `x-beer-key` | `{ userId, name }` | writes a signal, pushes only to people already up |
+| `POST /broadcast` | `x-beer-key` | `{ userId, name, message? }` | writes a signal, pushes to everyone else |
+| `POST /join` | `x-beer-key` | `{ userId, name, message? }` | writes a signal, pushes only to people already up |
 | `POST /leave` | none | `{ userId }` | deletes the signal, no push |
-| `GET /state?userId=` | none | | active roster with seconds left per person |
+| `GET /state?userId=` | none | | active roster with seconds left and note per person |
 
 A signal lives 3 hours, set in the config block at the top of `lambda/index.mjs`. There is no rate limit on calling a round: a broadcast always writes the signal and fans out, so a double tap sends twice.
 
+`message` is an optional free text note. It is whitespace collapsed and truncated to `CONFIG.maxMessageLength` server side, appended to the notification body after a colon, stored on the signal, and returned by `/state` so it also shows in the roster. Omitted or blank, the notification reads exactly as before.
+
 ## Config knobs
 
-- `lambda/index.mjs`: `CONFIG.signalTtlSeconds`.
+- `lambda/index.mjs`: `CONFIG.signalTtlSeconds`, `CONFIG.maxMessageLength`, `CONFIG.appName`.
 - Lambda env vars: `TABLE_NAME`, `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`, `APP_URL`.
 - Secrets in SSM: `/upforbeers/vapid-private`, `/upforbeers/passphrase`.
 

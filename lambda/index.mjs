@@ -13,6 +13,8 @@ import webpush from 'web-push';
 const CONFIG = {
   table: process.env.TABLE_NAME || 'upforbeers',
   signalTtlSeconds: 3 * 3600, // a signal lives 3 hours
+  maxMessageLength: 80, // a note rides along on the push, keep it inside one notification line
+  appName: 'UpForBeers',
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
   vapidSubject: process.env.VAPID_SUBJECT || 'mailto:filupnot@gmail.com',
   vapidPrivateParam: '/upforbeers/vapid-private',
@@ -49,6 +51,13 @@ async function getParam(Name) {
 // ---------- helpers ----------
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 const now = () => Math.floor(Date.now() / 1000);
+
+// A note is free text from the client. Collapse whitespace so it cannot smuggle
+// newlines into the notification body, and cap it so the push payload stays small.
+function cleanMessage(m) {
+  if (typeof m !== 'string') return '';
+  return m.replace(/\s+/g, ' ').trim().slice(0, CONFIG.maxMessageLength);
+}
 
 function json(statusCode, body) {
   return {
@@ -159,13 +168,14 @@ async function broadcast(data) {
   if (!userId || !name) return json(400, { error: 'userId and name required' });
 
   const t = now();
+  const message = cleanMessage(data.message);
 
-  await writeSignal(userId, name, false, t);
+  await writeSignal(userId, name, false, t, message);
 
   const subs = (await allSubscriptions()).filter((s) => s.userId !== userId);
   await fanout(subs, {
-    title: 'upforbeers',
-    body: `${name} is up for beers`,
+    title: CONFIG.appName,
+    body: message ? `${name} is up for beers: ${message}` : `${name} is up for beers`,
     url: CONFIG.appUrl,
   });
 
@@ -179,19 +189,20 @@ async function join(data) {
   if (!userId || !name) return json(400, { error: 'userId and name required' });
 
   const t = now();
+  const message = cleanMessage(data.message);
 
   // Push only to people who already have an active signal (excluding self).
   const active = await activeSignals();
   const upUserIds = new Set(active.map((s) => s.sk).filter((id) => id !== userId));
 
-  await writeSignal(userId, name, true, t);
+  await writeSignal(userId, name, true, t, message);
 
   let notified = 0;
   if (upUserIds.size) {
     const subs = (await allSubscriptions()).filter((s) => upUserIds.has(s.userId));
     await fanout(subs, {
-      title: 'upforbeers',
-      body: `${name} is in`,
+      title: CONFIG.appName,
+      body: message ? `${name} is in: ${message}` : `${name} is in`,
       url: CONFIG.appUrl,
     });
     notified = new Set(subs.map((s) => s.userId)).size;
@@ -200,7 +211,7 @@ async function join(data) {
   return json(200, { ok: true, notified, expiresIn: CONFIG.signalTtlSeconds });
 }
 
-async function writeSignal(userId, name, joined, t) {
+async function writeSignal(userId, name, joined, t, message) {
   await ddb.send(
     new PutCommand({
       TableName: CONFIG.table,
@@ -211,6 +222,8 @@ async function writeSignal(userId, name, joined, t) {
         expiresAt: t + CONFIG.signalTtlSeconds,
         ttl: t + CONFIG.signalTtlSeconds,
         joined,
+        // Empty string is not a useful attribute, drop it rather than store it.
+        message: message || undefined,
       },
     })
   );
@@ -235,6 +248,7 @@ async function state(event) {
     .map((s) => ({
       userId: s.sk,
       name: s.name,
+      message: s.message || '',
       secondsLeft: Math.max(0, s.expiresAt - t),
       joined: !!s.joined,
       mine: s.sk === userId,

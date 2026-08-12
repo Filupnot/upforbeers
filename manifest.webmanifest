@@ -1,6 +1,6 @@
 {
-  "name": "upforbeers",
-  "short_name": "upforbeers",
+  "name": "UpForBeers",
+  "short_name": "UpForBeers",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
