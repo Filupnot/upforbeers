@@ -203,7 +203,7 @@ aws lambda create-function-url-config \
 
 `AllowOrigins: ["*"]` would let any page on the internet POST to `/broadcast` and buzz everyone's phone. Restrict it to the one origin that is allowed to.
 
-A public Function URL still needs an explicit resource permission, even with `--auth-type NONE`:
+A public Function URL still needs explicit resource permissions, even with `--auth-type NONE`. Since October 2025 that means **two** statements, not one: `lambda:InvokeFunctionUrl` *and* `lambda:InvokeFunction`. The CLI cannot express both in a single call, so run both commands. Granting only the first returns 403 on every request, and because the denial happens before the function is invoked you get no CloudWatch logs and no metrics, which looks exactly like a dead Lambda.
 
 ```sh
 aws lambda add-permission \
@@ -214,9 +214,24 @@ aws lambda add-permission \
   --principal "*" \
   --function-url-auth-type NONE
 
+aws lambda add-permission \
+  --region "$AWS_REGION" \
+  --function-name "$FN" \
+  --statement-id UrlPolicyInvokeFunction \
+  --action lambda:InvokeFunction \
+  --principal "*" \
+  --invoked-via-function-url
+
 export FUNCTION_URL=$(aws lambda get-function-url-config --region "$AWS_REGION" \
   --function-name "$FN" --query FunctionUrl --output text | sed 's:/*$::')
 echo "$FUNCTION_URL"
+```
+
+`--invoked-via-function-url` attaches a `lambda:InvokedViaFunctionUrl` condition, so the grant only covers calls arriving through the Function URL and not direct `Invoke` API calls. Confirm both statements landed before moving on:
+
+```sh
+aws lambda get-policy --region "$AWS_REGION" --function-name "$FN" \
+  --query Policy --output text | python3 -m json.tool
 ```
 
 Smoke test it before touching the frontend. CORS only applies to browsers, so curl ignores it:
@@ -342,6 +357,25 @@ aws cloudwatch put-metric-alarm --region us-east-1 \
 To actually get emailed, create an SNS topic, subscribe your address, confirm the email, and add `--alarm-actions <topic-arn>` to the command above. (Billing alerts must also be enabled once in the Billing console under Billing preferences.)
 
 ## Troubleshooting
+
+**Every request returns 403 and Lambda shows no invocations, no logs, no metrics.** The resource policy is missing the `lambda:InvokeFunction` statement. Since October 2025 a `NONE` auth-type Function URL needs both `lambda:InvokeFunctionUrl` and `lambda:InvokeFunction`; with only the first, the Function URL service rejects the request before it ever reaches your code, so the monitoring tab stays empty and it looks like the function is broken. Run both `add-permission` commands in step 7. To confirm the function itself is healthy while you debug, bypass the URL entirely:
+
+```sh
+echo '{"rawPath":"/state","requestContext":{"http":{"method":"GET"}},"queryStringParameters":{"userId":"test"},"headers":{}}' > /tmp/ev.json
+aws lambda invoke --region "$AWS_REGION" --function-name "$FN" \
+  --cli-binary-format raw-in-base64-out --payload file:///tmp/ev.json /tmp/out.json
+cat /tmp/out.json
+```
+
+A 200 here with a 403 through the URL means the problem is the resource policy, not the code.
+
+**The site works but nothing happens when you tap, and Lambda sees no traffic.** The `FUNCTION_URL` in the *deployed* `config.js` does not match the live Function URL. Editing `config.js` locally is not enough; GitHub Pages serves whatever is committed and pushed. Deleting and recreating a Function URL also issues a brand new subdomain, so an old value silently points at nothing. Check what is actually live against what AWS reports:
+
+```sh
+curl -s https://upforbeers.philipknott.net/config.js
+aws lambda get-function-url-config --region "$AWS_REGION" \
+  --function-name "$FN" --query FunctionUrl --output text
+```
 
 **The permission prompt does nothing / never appears.** You are not in standalone mode. iOS only grants web push to apps opened from the Home Screen icon. If you opened the link in Safari, you will see the install screen instead of the pint. Add to Home Screen and open from there.
 
