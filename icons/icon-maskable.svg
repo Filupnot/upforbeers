@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Maskable variant of icon.svg. Two differences, both required by the spec:
+       the background bleeds to the full square because the platform applies its
+       own mask, and the artwork is scaled to sit inside the 40% safe radius so a
+       circular mask cannot clip the bottom of the glass. -->
+  <rect width="512" height="512" fill="#0E1A1B"/>
+  <g transform="translate(256 256) scale(0.94) translate(-256 -256)">
+    <g transform="translate(2 -16)">
+      <path d="M138 146 L374 146 L354 430 Q351 468 310 468 L202 468 Q161 468 158 430 Z"
+            fill="none" stroke="#23383C" stroke-width="16"/>
+      <path d="M154 258 L358 258 L346 426 Q343 458 310 458 L202 458 Q169 458 166 426 Z"
+            fill="#F2A93B"/>
+      <path d="M130 155 Q116 106 181 106 Q200 70 258 84 Q301 62 338 95 Q396 98 378 144 Q389 180 338 180 L156 180 Q116 180 130 155 Z"
+            fill="#FFEBC2"/>
+    </g>
+  </g>
+</svg>

@@ -20,7 +20,7 @@ app.js                identity, polling, actions, the install and passphrase gat
 sw.js                 service worker: always shows a notification, focuses or opens on click
 manifest.webmanifest  standalone PWA manifest
 config.js             FUNCTION_URL and VAPID_PUBLIC_KEY, both public
-icons/                180 / 192 / 512 png plus the source svg
+icons/                180 / 192 / 512 png, a full bleed 512 maskable, plus the two source svgs
 lambda/index.mjs      the single handler, all routes
 SETUP.md              stand up the AWS side by hand, top to bottom
 ```

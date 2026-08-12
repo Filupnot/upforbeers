@@ -1,15 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="112" fill="#0E1A1B"/>
-  <!-- pint glass -->
-  <g transform="translate(176 120)">
+  <!-- pint glass, sized to fill the tile: rim spans 236 of 512 across.
+       The translate centres the drawn artwork on the tile, foam and all. -->
+  <g transform="translate(2 -16)">
     <!-- glass body -->
-    <path d="M20 44 L140 44 L128 320 Q126 348 96 348 L64 348 Q34 348 32 320 Z"
-          fill="none" stroke="#23383C" stroke-width="12"/>
+    <path d="M138 146 L374 146 L354 430 Q351 468 310 468 L202 468 Q161 468 158 430 Z"
+          fill="none" stroke="#23383C" stroke-width="16"/>
     <!-- beer fill -->
-    <path d="M30 150 L130 150 L122 320 Q120 340 96 340 L64 340 Q40 340 38 320 Z"
+    <path d="M154 258 L358 258 L346 426 Q343 458 310 458 L202 458 Q169 458 166 426 Z"
           fill="#F2A93B"/>
     <!-- foam head -->
-    <path d="M14 60 Q6 24 42 24 Q52 -2 84 8 Q108 -8 128 16 Q160 18 150 52 Q156 78 128 78 L28 78 Q6 78 14 60 Z"
+    <path d="M130 155 Q116 106 181 106 Q200 70 258 84 Q301 62 338 95 Q396 98 378 144 Q389 180 338 180 L156 180 Q116 180 130 155 Z"
           fill="#FFEBC2"/>
   </g>
 </svg>
