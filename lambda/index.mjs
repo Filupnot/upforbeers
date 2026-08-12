@@ -4,7 +4,6 @@ import {
   DynamoDBDocumentClient,
   PutCommand,
   DeleteCommand,
-  UpdateCommand,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
@@ -14,7 +13,6 @@ import webpush from 'web-push';
 const CONFIG = {
   table: process.env.TABLE_NAME || 'upforbeers',
   signalTtlSeconds: 3 * 3600, // a signal lives 3 hours
-  cooldownSeconds: 3600, // one round per hour, per person
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
   vapidSubject: process.env.VAPID_SUBJECT || 'mailto:filupnot@gmail.com',
   vapidPrivateParam: '/upforbeers/vapid-private',
@@ -161,35 +159,6 @@ async function broadcast(data) {
   if (!userId || !name) return json(400, { error: 'userId and name required' });
 
   const t = now();
-  const cutoff = t - CONFIG.cooldownSeconds;
-
-  // Single atomic conditional write. No read then check then write, it races on a double tap.
-  try {
-    await ddb.send(
-      new UpdateCommand({
-        TableName: CONFIG.table,
-        Key: { pk: 'COOLDOWN', sk: userId },
-        UpdateExpression: 'SET lastSent = :now',
-        ConditionExpression: 'attribute_not_exists(lastSent) OR lastSent < :cutoff',
-        ExpressionAttributeValues: { ':now': t, ':cutoff': cutoff },
-      })
-    );
-  } catch (e) {
-    if (e.name === 'ConditionalCheckFailedException') {
-      // Read the existing value to tell the client how long is left.
-      const out = await ddb.send(
-        new QueryCommand({
-          TableName: CONFIG.table,
-          KeyConditionExpression: 'pk = :p AND sk = :s',
-          ExpressionAttributeValues: { ':p': 'COOLDOWN', ':s': userId },
-        })
-      );
-      const lastSent = out.Items?.[0]?.lastSent ?? cutoff;
-      const retryAfter = Math.max(0, lastSent + CONFIG.cooldownSeconds - t);
-      return json(429, { retryAfter });
-    }
-    throw e;
-  }
 
   await writeSignal(userId, name, false, t);
 
@@ -272,17 +241,7 @@ async function state(event) {
     }))
     .sort((a, b) => b.secondsLeft - a.secondsLeft);
 
-  const cool = await ddb.send(
-    new QueryCommand({
-      TableName: CONFIG.table,
-      KeyConditionExpression: 'pk = :p AND sk = :s',
-      ExpressionAttributeValues: { ':p': 'COOLDOWN', ':s': userId },
-    })
-  );
-  const lastSent = cool.Items?.[0]?.lastSent;
-  const cooldownLeft = lastSent ? Math.max(0, lastSent + CONFIG.cooldownSeconds - t) : 0;
-
-  return json(200, { roster, cooldownLeft, now: t });
+  return json(200, { roster, now: t });
 }
 
 // ---------- dispatch ----------

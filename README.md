@@ -32,18 +32,16 @@ One Lambda, dispatched on method and path.
 | Route | Auth | Body | Does |
 |---|---|---|---|
 | `POST /subscribe` | none | `{ userId, name, subscription }` | upserts the push subscription, idempotent |
-| `POST /broadcast` | `x-beer-key` | `{ userId, name }` | acquires the cooldown, writes a signal, pushes to everyone else |
-| `POST /join` | `x-beer-key` | `{ userId, name }` | writes a signal, pushes only to people already up, no cooldown |
+| `POST /broadcast` | `x-beer-key` | `{ userId, name }` | writes a signal, pushes to everyone else |
+| `POST /join` | `x-beer-key` | `{ userId, name }` | writes a signal, pushes only to people already up |
 | `POST /leave` | none | `{ userId }` | deletes the signal, no push |
-| `GET /state?userId=` | none | | active roster with seconds left per person, plus this user's cooldown seconds |
+| `GET /state?userId=` | none | | active roster with seconds left per person |
 
-A signal lives 3 hours. Cooldown is 1 hour per person. Both are in the config block at the top of `lambda/index.mjs`.
-
-The cooldown is a single atomic conditional `UpdateItem`, so a double tap cannot call two rounds. On a rejected write the Lambda returns 429 with `retryAfter` seconds, and the client renders the countdown from that server value, never from localStorage.
+A signal lives 3 hours, set in the config block at the top of `lambda/index.mjs`. There is no rate limit on calling a round: a broadcast always writes the signal and fans out, so a double tap sends twice.
 
 ## Config knobs
 
-- `lambda/index.mjs`: `CONFIG.signalTtlSeconds`, `CONFIG.cooldownSeconds`.
+- `lambda/index.mjs`: `CONFIG.signalTtlSeconds`.
 - Lambda env vars: `TABLE_NAME`, `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`, `APP_URL`.
 - Secrets in SSM: `/upforbeers/vapid-private`, `/upforbeers/passphrase`.
 

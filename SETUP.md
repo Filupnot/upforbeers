@@ -237,7 +237,7 @@ aws lambda get-policy --region "$AWS_REGION" --function-name "$FN" \
 Smoke test it before touching the frontend. CORS only applies to browsers, so curl ignores it:
 
 ```sh
-# empty roster, zero cooldown
+# empty roster
 curl -s "$FUNCTION_URL/state?userId=test" ; echo
 
 # auth rejects a bad key
@@ -253,10 +253,10 @@ curl -s -X POST "$FUNCTION_URL/broadcast" \
 # the signal now shows up
 curl -s "$FUNCTION_URL/state?userId=other" ; echo
 
-# a second immediate broadcast trips the cooldown
+# there is no rate limit, so a second immediate broadcast fans out again
 curl -s -o /dev/null -w '%{http_code}\n' -X POST "$FUNCTION_URL/broadcast" \
   -H 'content-type: application/json' -H "x-beer-key: $PASSPHRASE" \
-  -d '{"userId":"test","name":"Test"}'     # expect 429
+  -d '{"userId":"test","name":"Test"}'     # expect 200
 
 # clean the test signal back out
 curl -s -X POST "$FUNCTION_URL/leave" \

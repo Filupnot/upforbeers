@@ -3,7 +3,6 @@
 const { FUNCTION_URL, VAPID_PUBLIC_KEY } = window.UB_CONFIG;
 
 const WINDOW = 3 * 3600; // a signal lives 3 hours, matches the Lambda config
-const COOL = 3600; // one round per hour
 const POLL_MS = 5000;
 
 // ---------- identity ----------
@@ -30,10 +29,9 @@ const count = document.getElementById('count');
 const whoami = document.getElementById('whoami');
 const undo = document.getElementById('undo');
 const pint = document.getElementById('pint');
-const ring = document.querySelector('.ring');
 
 // ---------- local model, synced from the server ----------
-let model = { roster: [], cooldownLeft: 0 };
+let model = { roster: [] };
 let justNotified = null; // count returned by the last broadcast/join, shown while we're up
 let busy = false;
 
@@ -43,8 +41,6 @@ const fmt = (s) => {
   const m = Math.floor((s % 3600) / 60);
   return h ? h + 'h ' + String(m).padStart(2, '0') + 'm' : m + 'm';
 };
-const clock = (s) =>
-  String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ---------- derive the display state ----------
@@ -53,7 +49,6 @@ function currentState() {
   const others = model.roster.filter((p) => !p.mine);
   if (mine) return 'mine';
   if (others.length) return 'theirs';
-  if (model.cooldownLeft > 0) return 'cooldown';
   return 'idle';
 }
 
@@ -107,15 +102,6 @@ function render() {
     } else {
       status.innerHTML = "You're up for beers. Waiting on the crew.";
     }
-  } else if (st === 'cooldown') {
-    fill.style.height = '0%';
-    phone.style.setProperty('--glow', 0.25);
-    ring.style.setProperty('--ring', (1 - model.cooldownLeft / COOL) * 100);
-    glyph.textContent = '⏳';
-    label.textContent = 'Cooling off';
-    timer.textContent = clock(model.cooldownLeft);
-    const agoMin = Math.max(1, Math.round((COOL - model.cooldownLeft) / 60));
-    status.innerHTML = `You called a round ${agoMin} minute${agoMin === 1 ? '' : 's'} ago. One per hour keeps everyone's phone friendly.`;
   }
 
   renderRoster();
@@ -128,7 +114,6 @@ async function fetchState() {
     if (!r.ok) return;
     const data = await r.json();
     model.roster = data.roster || [];
-    model.cooldownLeft = data.cooldownLeft || 0;
     if (!model.roster.some((p) => p.mine)) justNotified = null;
     render();
   } catch (e) {
@@ -244,12 +229,6 @@ async function broadcast() {
   if (!(await ensureSubscribed())) return;
   const r = await post('/broadcast', true);
   if (!r) return;
-  if (r.status === 429) {
-    const { retryAfter } = await r.json();
-    model.cooldownLeft = retryAfter;
-    render();
-    return;
-  }
   if (r.ok) {
     const data = await r.json().catch(() => ({}));
     justNotified = data.notified ?? null;
@@ -280,7 +259,7 @@ async function leave() {
 pint.onclick = async () => {
   if (busy) return;
   const st = currentState();
-  if (st === 'cooldown' || st === 'mine') return;
+  if (st === 'mine') return;
   busy = true;
   pint.disabled = true;
   try {
@@ -363,10 +342,6 @@ function boot() {
         p.secondsLeft -= 1;
         changed = true;
       }
-    }
-    if (model.cooldownLeft > 0) {
-      model.cooldownLeft -= 1;
-      changed = true;
     }
     if (changed) render();
   }, 1000);
